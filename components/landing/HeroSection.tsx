@@ -1,11 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import dynamic from "next/dynamic";
-import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { useTranslations } from "next-intl";
-import { Sparkles, ChevronDown, ArrowUpRight } from "lucide-react";
-import { UploadCharacterModal } from "./UploadCharacterModal";
+import { ChevronDown, ArrowUpRight } from "lucide-react";
 
 const HeroCharacter3D = dynamic(
   () => import("./HeroCharacter3D").then((m) => m.HeroCharacter3D),
@@ -23,16 +21,13 @@ function CharacterFallback() {
 
 export function HeroSection() {
   const t = useTranslations("hero");
-  const [uploadOpen, setUploadOpen] = useState(false);
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
 
   // Slow parallax on LIMINAL watermark
   const { scrollY } = useScroll();
   const liminalY = useTransform(scrollY, [0, 800], [0, -100]);
 
   return (
-    <>
-      <section className="hero-bg-adaptive relative min-h-screen overflow-hidden">
+    <section className="hero-bg-adaptive relative min-h-screen overflow-hidden">
 
         {/* ── Layer 8: Decorative floating color orbs ──────────────────── */}
         <div aria-hidden className="pointer-events-none absolute inset-0 z-8 overflow-hidden">
@@ -44,19 +39,7 @@ export function HeroSection() {
 
         {/* ── Layer 10: Spline 3D scene ────────────────────────────────── */}
         <div className="absolute inset-0 z-10">
-          {uploadedImage ? (
-            <div className="absolute inset-0 flex items-center justify-center p-16">
-              <motion.img
-                src={uploadedImage}
-                alt="Your character"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="animate-float max-h-full max-w-full object-contain"
-              />
-            </div>
-          ) : (
-            <HeroCharacter3D />
-          )}
+          <HeroCharacter3D />
         </div>
 
         {/* ── Layer 11: Giant LIMINAL watermark — above canvas, 7% opacity ── */}
@@ -151,27 +134,17 @@ export function HeroSection() {
             className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center"
           >
             <motion.button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent("open-login"))}
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.96 }}
-              onClick={() => setUploadOpen(true)}
-              className="glow-purple relative inline-flex items-center gap-2 overflow-hidden rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              className="glow-purple relative inline-flex items-center gap-2 overflow-hidden rounded-full px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
               style={{ background: "linear-gradient(135deg, #a855f7 0%, #14b8a6 100%)" }}
             >
               <span
                 aria-hidden
                 className="animate-cta-shimmer absolute inset-0 -skew-x-12 bg-linear-to-r from-transparent via-white/20 to-transparent"
               />
-              <Sparkles className="size-3.5" />
-              {t("cta_character")}
-            </motion.button>
-
-            <motion.button
-              type="button"
-              onClick={() => window.dispatchEvent(new CustomEvent("open-login"))}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              className="hero-secondary-cta inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
-            >
               {t("cta_start")}
               <ArrowUpRight className="size-3.5" />
             </motion.button>
@@ -192,16 +165,6 @@ export function HeroSection() {
             <ChevronDown className="hero-scroll size-5" />
           </motion.div>
         </motion.div>
-      </section>
-
-      <AnimatePresence>
-        {uploadOpen && (
-          <UploadCharacterModal
-            onClose={() => setUploadOpen(false)}
-            onUploadComplete={(url) => setUploadedImage(url)}
-          />
-        )}
-      </AnimatePresence>
-    </>
+    </section>
   );
 }

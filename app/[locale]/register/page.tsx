@@ -11,6 +11,7 @@ import { ExperienceForm } from "@/components/registration/ExperienceForm";
 import { Link, useRouter } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase";
 import { generateUniqueTherapistCode } from "@/lib/therapist-code";
+import { markOnboardingPending } from "@/lib/onboarding";
 
 const pageVariants = {
   enter: { opacity: 0, x: 24 },
@@ -144,6 +145,10 @@ export default function RegisterPage() {
           return;
         }
       }
+
+      // Mark the walkthrough as pending so it auto-launches once on this
+      // user's first dashboard visit — and never on a normal login afterwards.
+      markOnboardingPending(user.id);
 
       // If email confirmation is required, session won't exist yet
       if (!data.session) {
