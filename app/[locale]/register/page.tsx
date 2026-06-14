@@ -10,24 +10,7 @@ import { TherapistForm } from "@/components/registration/TherapistForm";
 import { ExperienceForm } from "@/components/registration/ExperienceForm";
 import { Link, useRouter } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase";
-
-type SupabaseClient = ReturnType<typeof createClient>;
-
-async function generateUniqueTherapistCode(
-  supabase: SupabaseClient
-): Promise<string> {
-  for (let attempt = 0; attempt < 10; attempt++) {
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const { data } = await supabase
-      .from("therapists")
-      .select("id")
-      .eq("therapist_code", code)
-      .maybeSingle();
-    if (!data) return code;
-  }
-  // Fallback: 8-digit code to reduce collision chance
-  return Math.floor(10000000 + Math.random() * 90000000).toString();
-}
+import { generateUniqueTherapistCode } from "@/lib/therapist-code";
 
 const pageVariants = {
   enter: { opacity: 0, x: 24 },
@@ -130,15 +113,22 @@ export default function RegisterPage() {
           therapistId = therapistRow?.id ?? null;
         }
 
-        await supabase.from("patients").insert({
+        const patientRow: Record<string, unknown> = {
           id: crypto.randomUUID(),
           user_id: user.id,
           amputation_type: patientData.amputationType || null,
           amputation_side: patientData.amputationSide || null,
           therapist_code: code,
-          therapist_id: therapistId,
           date_of_birth: patientData.dob || null,
-        });
+        };
+        // therapist_id requires the SQL migration to have been run
+        if (therapistId) patientRow.therapist_id = therapistId;
+
+        const { error: patientError } = await supabase.from("patients").insert(patientRow);
+        if (patientError) {
+          setError(patientError.message);
+          return;
+        }
       } else if (role === "therapist") {
         const generatedCode = await generateUniqueTherapistCode(supabase);
         const { error: therapistError } = await supabase.from("therapists").insert({
@@ -168,7 +158,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="mesh-bg flex min-h-screen flex-col items-center justify-center px-4 py-16">
+    <div className="app-scaled mesh-bg flex min-h-screen flex-col items-center justify-center px-4 py-16">
       {/* Logo */}
       <Link href="/" className="mb-8 font-heading text-xl font-bold text-foreground">
         {tNav("logo")}<span className="text-primary">.</span>

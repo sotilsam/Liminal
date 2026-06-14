@@ -1,0 +1,10 @@
+.selector { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.label { font-size: 12px; color: #9aa0b4; }
+.grid { display: flex; flex-wrap: wrap; gap: 10px; }
+.card { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; font-family: inherit; text-align: left; min-width: 130px; background: #15162a; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 10px 14px; cursor: pointer; transition: .15s; }
+.card:hover { background: rgba(255,255,255,.06); }
+.cardTitle { font-size: 13px; font-weight: 600; color: #eef0f6; }
+.cardSub { font-size: 11px; color: #9aa0b4; }
+.on { background: #fb7185 !important; border-color: #fb7185 !important; }
+.on .cardTitle, .on .cardSub { color: #1a0710 !important; }
+.empty { font-size: 12px; color: #9aa0b4; }

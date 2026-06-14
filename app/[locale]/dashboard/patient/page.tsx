@@ -2,6 +2,7 @@ import { setRequestLocale } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { PatientShell } from "@/components/dashboard/PatientShell";
 import { createClient } from "@/lib/supabase-server";
+import { loadSettings } from "@/lib/settings";
 
 export default async function PatientDashboard({
   params,
@@ -16,17 +17,13 @@ export default async function PatientDashboard({
 
   if (!user) redirect(`/${locale}`);
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name, role")
-    .eq("id", user.id)
-    .single();
+  const settings = await loadSettings(supabase, user);
 
-  if (profile?.role && profile.role !== "patient") {
-    redirect(`/${locale}/dashboard/${profile.role}`);
+  if (settings.role !== "patient") {
+    redirect(`/${locale}/dashboard/${settings.role}`);
   }
 
-  const displayName = profile?.full_name ?? user.email ?? "User";
+  const displayName = settings.profile.fullName || user.email || "User";
 
-  return <PatientShell userName={displayName} />;
+  return <PatientShell userName={displayName} settings={settings} />;
 }

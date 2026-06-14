@@ -7,7 +7,7 @@ export function DigitalLayerDisplay() {
   const t = useTranslations("dashboard");
 
   return (
-    <section>
+    <section data-tour="experience-limb">
       <h2 className="mb-4 font-heading text-base font-semibold text-foreground">
         {t("ar_overlay_title")}
       </h2>

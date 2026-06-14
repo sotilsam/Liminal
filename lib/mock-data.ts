@@ -161,15 +161,28 @@ export const sessionsPerWeek: SessionBarPoint[] = [
   { week: "W8", sessions: 15 },
 ];
 
-export const limbModels = [
-  { id: "l1", label: "Below Knee — Right", labelHe: "מתחת לברך — ימין" },
-  { id: "l2", label: "Below Knee — Left", labelHe: "מתחת לברך — שמאל" },
-  { id: "l3", label: "Above Knee — Right", labelHe: "מעל הברך — ימין" },
-  { id: "l4", label: "Above Knee — Left", labelHe: "מעל הברך — שמאל" },
-  { id: "l5", label: "Below Elbow — Right", labelHe: "מתחת למרפק — ימין" },
-  { id: "l6", label: "Below Elbow — Left", labelHe: "מתחת למרפק — שמאל" },
-  { id: "l7", label: "Above Elbow — Right", labelHe: "מעל המרפק — ימין" },
-  { id: "l8", label: "Above Elbow — Left", labelHe: "מעל המרפק — שמאל" },
+export type LimbType = "leg" | "arm";
+export type LimbLevel = "above_knee" | "below_knee" | "above_elbow" | "below_elbow";
+export type LimbSide = "left" | "right";
+
+export interface LimbModel {
+  id: string;
+  label: string;
+  labelHe: string;
+  limbType: LimbType;
+  level: LimbLevel;
+  side: LimbSide;
+}
+
+export const limbModels: LimbModel[] = [
+  { id: "l1", label: "Below Knee — Right", labelHe: "מתחת לברך — ימין", limbType: "leg", level: "below_knee", side: "right" },
+  { id: "l2", label: "Below Knee — Left", labelHe: "מתחת לברך — שמאל", limbType: "leg", level: "below_knee", side: "left" },
+  { id: "l3", label: "Above Knee — Right", labelHe: "מעל הברך — ימין", limbType: "leg", level: "above_knee", side: "right" },
+  { id: "l4", label: "Above Knee — Left", labelHe: "מעל הברך — שמאל", limbType: "leg", level: "above_knee", side: "left" },
+  { id: "l5", label: "Below Elbow — Right", labelHe: "מתחת למרפק — ימין", limbType: "arm", level: "below_elbow", side: "right" },
+  { id: "l6", label: "Below Elbow — Left", labelHe: "מתחת למרפק — שמאל", limbType: "arm", level: "below_elbow", side: "left" },
+  { id: "l7", label: "Above Elbow — Right", labelHe: "מעל המרפק — ימין", limbType: "arm", level: "above_elbow", side: "right" },
+  { id: "l8", label: "Above Elbow — Left", labelHe: "מעל המרפק — שמאל", limbType: "arm", level: "above_elbow", side: "left" },
 ];
 
 export const mockCurrentPatient = mockPatients[0];
@@ -181,4 +194,66 @@ export const therapistReportMetrics = {
     mockPatients.reduce((acc, p) => acc + p.progress, 0) / mockPatients.length
   ),
   sessionsThisMonth: 47,
+};
+
+export interface ActivityItem {
+  patient: string;
+  date: string;
+  duration: string;
+  type: string;
+  score: number;
+}
+
+// Last sessions across all patients, newest first — for the therapist Home feed.
+export const recentActivity: ActivityItem[] = mockPatients
+  .flatMap((p) => p.sessions.map((s) => ({ patient: p.name, ...s })))
+  .sort((a, b) => b.date.localeCompare(a.date))
+  .slice(0, 5);
+
+// Monthly session volume — used for the Reports "sessions over time" trend.
+export const sessionsByMonth = [
+  { month: "Jan", sessions: 28 },
+  { month: "Feb", sessions: 34 },
+  { month: "Mar", sessions: 41 },
+  { month: "Apr", sessions: 39 },
+  { month: "May", sessions: 47 },
+];
+
+// Distribution of patients across progress bands — Reports analytics.
+export const progressDistribution = [
+  {
+    band: "0–25%",
+    patients: mockPatients.filter((p) => p.progress <= 25).length,
+  },
+  {
+    band: "26–50%",
+    patients: mockPatients.filter((p) => p.progress > 25 && p.progress <= 50)
+      .length,
+  },
+  {
+    band: "51–75%",
+    patients: mockPatients.filter((p) => p.progress > 50 && p.progress <= 75)
+      .length,
+  },
+  {
+    band: "76–100%",
+    patients: mockPatients.filter((p) => p.progress > 75).length,
+  },
+];
+
+export const analyticsMetrics = {
+  recoveryRate: Math.round(
+    (mockPatients.filter((p) => p.progress >= 70).length / mockPatients.length) *
+      100
+  ),
+  dischargeReady: mockPatients.filter((p) => p.progress >= 85).length,
+  avgSessionsPerPatient: Math.round(
+    mockPatients.reduce((acc, p) => acc + p.sessions.length, 0) /
+      mockPatients.length
+  ),
+  retention: Math.round(
+    (mockPatients.filter((p) => p.status === "active").length /
+      mockPatients.length) *
+      100
+  ),
 };

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useTranslations } from "next-intl";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Send } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -14,6 +14,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { type MockPatient } from "@/lib/mock-data";
+import { RemotePlanBuilder } from "./RemotePlanBuilder";
+import { TherapistFeedbackPanel } from "./TherapistFeedbackPanel";
 
 interface PatientFileViewProps {
   patient: MockPatient;
@@ -23,6 +25,7 @@ interface PatientFileViewProps {
 export function PatientFileView({ patient, onBack }: PatientFileViewProps) {
   const t = useTranslations("dashboard");
   const [notes, setNotes] = useState(patient.notes);
+  const [showPlan, setShowPlan] = useState(false);
 
   const chartData = patient.sessions.map((s) => ({
     date: s.date.slice(5),
@@ -58,7 +61,7 @@ export function PatientFileView({ patient, onBack }: PatientFileViewProps) {
               {patient.amputationType} &middot; {t("join_date")}: {patient.joinDate}
             </p>
           </div>
-          <div className="ms-auto">
+          <div className="ms-auto flex items-center gap-3">
             <span
               className={[
                 "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold",
@@ -69,9 +72,35 @@ export function PatientFileView({ patient, onBack }: PatientFileViewProps) {
             >
               {patient.status === "active" ? t("active") : t("inactive")}
             </span>
+            <button
+              onClick={() => setShowPlan((v) => !v)}
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
+            >
+              <Send className="size-3.5" />
+              {t("build_remote_plan")}
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Remote plan builder — only available from inside a patient's file */}
+      <AnimatePresence>
+        {showPlan && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="mb-6 overflow-hidden"
+          >
+            <RemotePlanBuilder
+              patientName={patient.name}
+              patientId={patient.id}
+              onClose={() => setShowPlan(false)}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Progress chart */}
@@ -129,33 +158,8 @@ export function PatientFileView({ patient, onBack }: PatientFileViewProps) {
         </div>
       </div>
 
-      {/* Session history */}
-      <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-card">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-muted/40">
-              <th className="px-4 py-3 text-start text-xs font-semibold text-muted-foreground">{t("date")}</th>
-              <th className="px-4 py-3 text-start text-xs font-semibold text-muted-foreground">{t("duration")}</th>
-              <th className="px-4 py-3 text-start text-xs font-semibold text-muted-foreground">{t("type")}</th>
-              <th className="px-4 py-3 text-end text-xs font-semibold text-muted-foreground">{t("score")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {patient.sessions.map((s, i) => (
-              <tr key={i} className="border-b border-border/50 last:border-0 hover:bg-muted/25">
-                <td className="px-4 py-3 text-foreground">{s.date}</td>
-                <td className="px-4 py-3 text-muted-foreground">{s.duration}</td>
-                <td className="px-4 py-3">
-                  <span className="inline-flex rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground">
-                    {s.type}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-end font-semibold text-primary">{s.score}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {/* Personal feedback to this patient */}
+      <TherapistFeedbackPanel patientId={patient.id} />
     </motion.section>
   );
 }

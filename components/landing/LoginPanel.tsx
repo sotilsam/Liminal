@@ -4,13 +4,6 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { X, Mail, Lock, Eye, EyeOff } from "lucide-react";
-import { SplineScene } from "@/components/ui/splite";
-import type { Application } from "@splinetool/runtime";
-
-const SPLINE_SCENE = "https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode";
-function onSplineLoad(spline: Application) {
-  spline.setBackgroundColor("#f8fffe");
-}
 import { Link, useRouter } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase";
 
@@ -75,6 +68,12 @@ export function LoginPanel({ onClose }: LoginPanelProps) {
         transition={{ type: "spring", damping: 28, stiffness: 300 }}
         className="fixed inset-y-0 end-0 z-50 flex w-full max-w-md flex-col bg-background shadow-2xl"
       >
+        {/* Gradient accent strip */}
+        <div
+          aria-hidden
+          style={{ background: "linear-gradient(90deg, #a855f7, #14b8a6, #f43f5e)", height: 3, flexShrink: 0 }}
+        />
+
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-8 py-5">
           <div>
@@ -94,20 +93,6 @@ export function LoginPanel({ onClose }: LoginPanelProps) {
 
         {/* Scrollable body */}
         <div className="flex flex-1 overflow-y-auto">
-          {/* 3D character area */}
-          <div className="hidden w-2/5 flex-col overflow-hidden bg-linear-to-b from-secondary/40 to-background sm:flex">
-            <div className="relative flex-1">
-              <SplineScene
-                scene={SPLINE_SCENE}
-                className="h-full w-full"
-                onLoad={onSplineLoad}
-              />
-            </div>
-            <p className="py-3 text-center text-xs font-medium text-muted-foreground">
-              Liminal
-            </p>
-          </div>
-
           {/* Form */}
           <div className="flex flex-1 flex-col justify-center px-8 py-10">
             <form className="space-y-5" onSubmit={handleSubmit}>
@@ -183,7 +168,8 @@ export function LoginPanel({ onClose }: LoginPanelProps) {
                 disabled={isLoading}
                 whileHover={!isLoading ? { scale: 1.02 } : {}}
                 whileTap={!isLoading ? { scale: 0.98 } : {}}
-                className="w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full rounded-xl py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                style={{ background: "linear-gradient(135deg, #a855f7 0%, #14b8a6 100%)" }}
               >
                 {isLoading ? "…" : t("submit")}
               </motion.button>

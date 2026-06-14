@@ -48,9 +48,12 @@ export async function proxy(request: NextRequest) {
   // Run next-intl middleware (handles locale detection / redirects)
   const intlResponse = intlMiddleware(request);
 
-  // Copy any refreshed session cookies onto the intl response
-  supabaseResponse.cookies.getAll().forEach((cookie) => {
-    intlResponse.cookies.set(cookie.name, cookie.value);
+  // Copy any refreshed session cookies onto the intl response.
+  // Must forward ALL cookie attributes (path, sameSite, secure, httpOnly,
+  // maxAge, etc.) — dropping them causes the browser client to receive a
+  // malformed session cookie and silently fail on every authenticated write.
+  supabaseResponse.cookies.getAll().forEach(({ name, value, ...options }) => {
+    intlResponse.cookies.set(name, value, options);
   });
 
   return intlResponse;

@@ -1,0 +1,7 @@
+.selector { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+.group { display: flex; align-items: center; gap: 8px; }
+.label { font-size: 12px; color: #9aa0b4; }
+.seg { display: inline-flex; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; overflow: hidden; }
+.seg button { font-family: inherit; font-size: 13px; font-weight: 500; color: #eef0f6; background: transparent; border: none; padding: 8px 14px; cursor: pointer; transition: .15s; }
+.seg button:hover { background: rgba(255,255,255,.04); }
+.on { background: #fb7185 !important; color: #1a0710 !important; font-weight: 700 !important; }

@@ -16,7 +16,7 @@ export function ProgressChart() {
   const t = useTranslations("dashboard");
 
   return (
-    <section>
+    <section data-tour="patient-progress">
       <h2 className="mb-4 font-heading text-base font-semibold text-foreground">
         {t("progress_over_time")}
       </h2>

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Search } from "lucide-react";
 import { mockPatients, type MockPatient } from "@/lib/mock-data";
 import { PatientFileView } from "./PatientFileView";
 
@@ -43,11 +43,22 @@ function toMockShape(p: LinkedPatient): MockPatient {
 export function PatientTable({ linkedPatients }: PatientTableProps) {
   const t = useTranslations("dashboard");
   const [selectedPatient, setSelectedPatient] = useState<MockPatient | null>(null);
+  const [query, setQuery] = useState("");
 
   const patients: MockPatient[] =
     linkedPatients !== undefined
       ? linkedPatients.map(toMockShape)
       : mockPatients;
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return patients;
+    return patients.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.amputationType.toLowerCase().includes(q)
+    );
+  }, [patients, query]);
 
   if (selectedPatient) {
     return (
@@ -59,14 +70,31 @@ export function PatientTable({ linkedPatients }: PatientTableProps) {
   }
 
   return (
-    <section>
-      <h2 className="mb-4 font-heading text-base font-semibold text-foreground">
-        {t("patient_control_panel")}
-      </h2>
+    <section data-tour="therapist-patients">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-heading text-base font-semibold text-foreground">
+          {t("patient_control_panel")}
+        </h2>
+        <div className="relative w-full sm:w-64">
+          <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("search_patients")}
+            aria-label={t("search_patients")}
+            className="w-full rounded-xl border border-border bg-input px-4 py-2 ps-9 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
+          />
+        </div>
+      </div>
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
         {patients.length === 0 ? (
           <div className="px-6 py-12 text-center text-sm text-muted-foreground">
             {t("no_patients_yet")}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="px-6 py-12 text-center text-sm text-muted-foreground">
+            {t("no_results")}
           </div>
         ) : (
           <table className="w-full text-sm">
@@ -90,7 +118,7 @@ export function PatientTable({ linkedPatients }: PatientTableProps) {
               </tr>
             </thead>
             <tbody>
-              {patients.map((patient, i) => (
+              {filtered.map((patient, i) => (
                 <motion.tr
                   key={patient.id}
                   initial={{ opacity: 0, y: 8 }}

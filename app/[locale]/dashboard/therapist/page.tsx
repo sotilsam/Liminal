@@ -2,6 +2,7 @@ import { setRequestLocale } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { TherapistShell } from "@/components/dashboard/TherapistShell";
 import { createClient } from "@/lib/supabase-server";
+import { loadSettings } from "@/lib/settings";
 import type { LinkedPatient } from "@/components/dashboard/PatientTable";
 
 export default async function TherapistDashboard({
@@ -17,25 +18,19 @@ export default async function TherapistDashboard({
 
   if (!user) redirect(`/${locale}`);
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name, role")
-    .eq("id", user.id)
-    .single();
+  const settings = await loadSettings(supabase, user);
 
-  if (profile?.role && profile.role !== "therapist") {
-    redirect(`/${locale}/dashboard/${profile.role}`);
+  if (settings.role !== "therapist") {
+    redirect(`/${locale}/dashboard/${settings.role}`);
   }
 
-  const displayName = profile?.full_name ?? user.email ?? "User";
+  const displayName = settings.profile.fullName || user.email || "User";
 
   const { data: therapist } = await supabase
     .from("therapists")
-    .select("id, therapist_code")
+    .select("id")
     .eq("user_id", user.id)
     .single();
-
-  const therapistCode = therapist?.therapist_code ?? null;
 
   let linkedPatients: LinkedPatient[] = [];
   if (therapist?.id) {
@@ -52,8 +47,8 @@ export default async function TherapistDashboard({
   return (
     <TherapistShell
       userName={displayName}
-      therapistCode={therapistCode}
       linkedPatients={linkedPatients}
+      settings={settings}
     />
   );
 }

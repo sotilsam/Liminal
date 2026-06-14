@@ -32,9 +32,15 @@ export function HeroSection() {
 
   return (
     <>
-      <section className="hero-premium relative min-h-screen overflow-hidden">
+      <section className="hero-bg-adaptive relative min-h-screen overflow-hidden">
 
-        {/* ── Layer 0: animated gradient (section bg, visible at edges) ── */}
+        {/* ── Layer 8: Decorative floating color orbs ──────────────────── */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 z-8 overflow-hidden">
+          <div className="hero-orb-purple" style={{ position: "absolute", top: "12%", right: "18%", width: 420, height: 420, borderRadius: "50%", filter: "blur(100px)" }} />
+          <div className="hero-orb-rose"   style={{ position: "absolute", bottom: "10%", left: "5%", width: 360, height: 360, borderRadius: "50%", filter: "blur(90px)" }} />
+          <div className="hero-orb-teal"   style={{ position: "absolute", top: "45%", right: "3%", width: 280, height: 280, borderRadius: "50%", filter: "blur(80px)" }} />
+          <div className="hero-orb-indigo" style={{ position: "absolute", top: "20%", left: "30%", width: 220, height: 220, borderRadius: "50%", filter: "blur(70px)" }} />
+        </div>
 
         {/* ── Layer 10: Spline 3D scene ────────────────────────────────── */}
         <div className="absolute inset-0 z-10">
@@ -58,7 +64,7 @@ export function HeroSection() {
         <motion.div
           aria-hidden
           style={{ y: liminalY }}
-          className="pointer-events-none select-none absolute inset-0 z-5 flex items-center justify-center overflow-hidden"
+          className="pointer-events-none absolute inset-0 z-[5] flex select-none items-center justify-center overflow-hidden"
         >
           <span
             style={{
@@ -79,13 +85,13 @@ export function HeroSection() {
         {/* ── Layer 12: Dot grid texture overlay ───────────────────────── */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 z-[12] hero-dots"
+          className="pointer-events-none absolute inset-0 z-[12] hero-dots-adaptive"
         />
 
         {/* ── Layer 20: Heading (left) ──────────────────────────────────── */}
         <div className="absolute left-8 top-[30%] z-20 max-w-[360px] lg:left-14 lg:top-[32%]">
 
-          {/* "AI · AR · REHABILITATION" label */}
+          {/* " AR · REHABILITATION" label */}
           <motion.p
             initial={{ opacity: 0, x: -28 }}
             animate={{ opacity: 1, x: 0 }}
@@ -93,12 +99,15 @@ export function HeroSection() {
             style={{
               fontSize: "12px",
               letterSpacing: "4px",
-              color: "rgba(0, 170, 170, 1)",
               textTransform: "uppercase" as const,
-              fontWeight: 600,
+              fontWeight: 700,
+              background: "linear-gradient(90deg, #a855f7 0%, #14b8a6 55%, #f43f5e 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
             }}
           >
-            AI · AR · REHABILITATION
+             AR · REHABILITATION
           </motion.p>
 
           {/* Main heading */}
@@ -106,11 +115,11 @@ export function HeroSection() {
             initial={{ opacity: 0, x: -32 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.28, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="hero-heading"
             style={{
               fontSize: "clamp(36px, 5vw, 64px)",
               fontWeight: 800,
               lineHeight: 1.1,
-              color: "#1a1a1a",
               marginTop: "12px",
               fontFamily: "var(--font-heading)",
             }}
@@ -123,9 +132,9 @@ export function HeroSection() {
             initial={{ opacity: 0, x: -24 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.42, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            className="hero-subtitle"
             style={{
               fontSize: "16px",
-              color: "#666",
               maxWidth: "320px",
               marginTop: "14px",
               lineHeight: 1.65,
@@ -145,7 +154,8 @@ export function HeroSection() {
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.96 }}
               onClick={() => setUploadOpen(true)}
-              className="glow-teal-sm relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+              className="glow-purple relative inline-flex items-center gap-2 overflow-hidden rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              style={{ background: "linear-gradient(135deg, #a855f7 0%, #14b8a6 100%)" }}
             >
               <span
                 aria-hidden
@@ -155,16 +165,16 @@ export function HeroSection() {
               {t("cta_character")}
             </motion.button>
 
-            <motion.a
-              href="#how-it-works"
+            <motion.button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent("open-login"))}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
-              className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
-              style={{ color: "#555" }}
+              className="hero-secondary-cta inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
             >
               {t("cta_start")}
               <ArrowUpRight className="size-3.5" />
-            </motion.a>
+            </motion.button>
           </motion.div>
         </div>
 
@@ -179,7 +189,7 @@ export function HeroSection() {
             animate={{ y: [0, 6, 0] }}
             transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
           >
-            <ChevronDown style={{ width: 20, height: 20, color: "rgba(0,0,0,0.20)" }} />
+            <ChevronDown className="hero-scroll size-5" />
           </motion.div>
         </motion.div>
       </section>
