@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useFormatter, useNow } from "next-intl";
 import { AnimatePresence, motion } from "framer-motion";
 import { Bell, BellOff, LogOut } from "lucide-react";
 import { LanguageToggle } from "@/components/shared/LanguageToggle";
@@ -10,23 +10,43 @@ import { OnboardingHelpButton } from "@/components/onboarding/OnboardingHelpButt
 import { Link, useRouter } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase";
 
+export interface TopBarNotification {
+  id: string;
+  text: string;
+  /** ISO timestamp, shown as a relative time. */
+  time?: string;
+  unread?: boolean;
+}
+
 interface TopBarProps {
   userName?: string;
   badge?: string;
   avatarUrl?: string | null;
+  /** Items rendered in the bell dropdown. Defaults to an empty state. */
+  notifications?: TopBarNotification[];
+  /** Drives the bell's unread dot; falls back to any unread notification. */
+  hasUnread?: boolean;
 }
 
-export function TopBar({ userName = "User", badge, avatarUrl }: TopBarProps) {
+export function TopBar({
+  userName = "User",
+  badge,
+  avatarUrl,
+  notifications = [],
+  hasUnread,
+}: TopBarProps) {
   const t = useTranslations("dashboard");
   const tNav = useTranslations("nav");
+  const format = useFormatter();
+  const now = useNow();
   const router = useRouter();
 
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
 
-  // No real notifications yet — surface an explicit empty state.
-  const notifications: { id: string; text: string }[] = [];
   const hasNotifications = notifications.length > 0;
+  const showUnreadDot =
+    hasUnread ?? notifications.some((n) => n.unread);
 
   useEffect(() => {
     if (!notifOpen) return;
@@ -78,7 +98,7 @@ export function TopBar({ userName = "User", badge, avatarUrl }: TopBarProps) {
             className="relative rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground"
           >
             <Bell className="size-4" />
-            {hasNotifications && (
+            {showUnreadDot && (
               <span
                 aria-hidden
                 className="absolute inset-e-1 top-1 h-2 w-2 rounded-full bg-primary"
@@ -107,9 +127,25 @@ export function TopBar({ userName = "User", badge, avatarUrl }: TopBarProps) {
                     {notifications.map((n) => (
                       <li
                         key={n.id}
-                        className="px-4 py-2.5 text-sm text-foreground hover:bg-muted/50"
+                        className="relative px-4 py-2.5 hover:bg-muted/50"
                       >
-                        {n.text}
+                        {n.unread && (
+                          <span
+                            aria-hidden
+                            className="absolute inset-y-0 start-0 w-1 bg-primary"
+                          />
+                        )}
+                        <p
+                          dir="auto"
+                          className="text-sm leading-relaxed text-foreground"
+                        >
+                          {n.text}
+                        </p>
+                        {n.time && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {format.relativeTime(new Date(n.time), now)}
+                          </p>
+                        )}
                       </li>
                     ))}
                   </ul>

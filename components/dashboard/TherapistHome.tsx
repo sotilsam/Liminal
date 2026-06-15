@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
-import { Users, Activity, TrendingUp, CalendarCheck } from "lucide-react";
+import { Users, Activity, TrendingUp, CalendarCheck, BarChart3 } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -17,6 +17,7 @@ import {
   sessionsPerWeek,
   recentActivity,
 } from "@/lib/mock-data";
+import type { HomeActivityItem, TherapistHomeData } from "@/lib/therapist-metrics";
 import { WelcomeCard } from "./WelcomeCard";
 import { TherapistCalendar } from "./TherapistCalendar";
 import type { LinkedPatient } from "./PatientTable";
@@ -38,42 +39,63 @@ const cardVariants = {
 interface TherapistHomeProps {
   userName: string;
   linkedPatients: LinkedPatient[];
+  /** Demo/preview account → render the seeded showcase data. */
+  isDemo: boolean;
+  /** Real, RLS-scoped counts + activity + chart (ignored when isDemo). */
+  homeData: TherapistHomeData;
+  /** Current user id — lets the welcome card consume the first-login marker. */
+  userId: string;
 }
 
-export function TherapistHome({ userName, linkedPatients }: TherapistHomeProps) {
+export function TherapistHome({ userName, isDemo, homeData, linkedPatients, userId }: TherapistHomeProps) {
   const t = useTranslations("dashboard");
-  const m = therapistReportMetrics;
+
+  // Demo accounts showcase the seeded numbers; real accounts use live data.
+  const metrics = isDemo
+    ? {
+        totalPatients: therapistReportMetrics.totalPatients,
+        activeThisWeek: therapistReportMetrics.activeThisWeek,
+        sessionsThisMonth: therapistReportMetrics.sessionsThisMonth,
+        avgProgress: therapistReportMetrics.avgProgress as number | null,
+      }
+    : homeData.metrics;
+  const activity: HomeActivityItem[] = isDemo ? recentActivity : homeData.activity;
+  const weekly = isDemo ? sessionsPerWeek : homeData.weekly;
+
+  // A real therapist with no patients yet → every widget shows an empty state.
+  const isEmpty = !isDemo && metrics.totalPatients === 0;
+  const hasWeekly = weekly.some((w) => w.sessions > 0);
 
   const stats = [
     {
       icon: Users,
       label: t("total_patients"),
-      value: m.totalPatients,
+      value: metrics.totalPatients,
       hint: t("total_patients_hint"),
     },
     {
       icon: Activity,
       label: t("active_this_week"),
-      value: m.activeThisWeek,
+      value: metrics.activeThisWeek,
       hint: t("active_this_week_hint"),
     },
     {
       icon: CalendarCheck,
       label: t("sessions_this_month"),
-      value: m.sessionsThisMonth,
+      value: metrics.sessionsThisMonth,
       hint: t("sessions_this_month_hint"),
     },
     {
       icon: TrendingUp,
       label: t("avg_progress"),
-      value: `${m.avgProgress}%`,
+      value: metrics.avgProgress == null ? "—" : `${metrics.avgProgress}%`,
       hint: t("avg_progress_hint"),
     },
   ];
 
   return (
     <div className="space-y-6">
-      <WelcomeCard userName={userName} variant="therapist" />
+      <WelcomeCard userName={userName} userId={userId} variant="therapist" />
 
       {/* Quick stats */}
       <motion.div
@@ -97,7 +119,7 @@ export function TherapistHome({ userName, linkedPatients }: TherapistHomeProps) 
               {value}
             </p>
             <p className="mt-2 text-xs leading-snug text-muted-foreground/70">
-              {hint}
+              {isEmpty ? t("no_data_yet") : hint}
             </p>
           </motion.div>
         ))}
@@ -112,13 +134,13 @@ export function TherapistHome({ userName, linkedPatients }: TherapistHomeProps) 
           <h2 className="mb-4 font-heading text-base font-semibold text-foreground">
             {t("recent_activity")}
           </h2>
-          {recentActivity.length === 0 ? (
+          {activity.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
               {t("recent_activity_empty")}
             </p>
           ) : (
             <ul className="space-y-1">
-              {recentActivity.map((a, i) => (
+              {activity.map((a, i) => (
                 <motion.li
                   key={`${a.patient}-${a.date}-${i}`}
                   initial={{ opacity: 0, x: -8 }}
@@ -134,12 +156,14 @@ export function TherapistHome({ userName, linkedPatients }: TherapistHomeProps) 
                       {a.patient}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {a.type} &middot; {a.duration} &middot; {a.date}
+                      {[a.type, a.duration, a.date].filter(Boolean).join(" · ")}
                     </p>
                   </div>
-                  <span className="shrink-0 text-sm font-semibold text-primary">
-                    {a.score}
-                  </span>
+                  {a.score != null && (
+                    <span className="shrink-0 text-sm font-semibold text-primary">
+                      {a.score}
+                    </span>
+                  )}
                 </motion.li>
               ))}
             </ul>
@@ -151,40 +175,49 @@ export function TherapistHome({ userName, linkedPatients }: TherapistHomeProps) 
           <h2 className="mb-4 font-heading text-base font-semibold text-foreground">
             {t("sessions_per_week")}
           </h2>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart
-              data={sessionsPerWeek}
-              margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
-            >
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="var(--border)"
-                vertical={false}
-              />
-              <XAxis
-                dataKey="week"
-                tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <Tooltip
-                contentStyle={{
-                  borderRadius: "0.75rem",
-                  border: "1px solid var(--border)",
-                  background: "var(--popover)",
-                  color: "var(--popover-foreground)",
-                  fontSize: 12,
-                }}
-                cursor={{ fill: "var(--muted)", opacity: 0.5 }}
-              />
-              <Bar dataKey="sessions" fill="var(--primary)" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          {hasWeekly ? (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart
+                data={weekly}
+                margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="var(--border)"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="week"
+                  tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: "0.75rem",
+                    border: "1px solid var(--border)",
+                    background: "var(--popover)",
+                    color: "var(--popover-foreground)",
+                    fontSize: 12,
+                  }}
+                  cursor={{ fill: "var(--muted)", opacity: 0.5 }}
+                />
+                <Bar dataKey="sessions" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex min-h-[220px] flex-col items-center justify-center gap-2 text-center">
+              <BarChart3 className="size-7 text-muted-foreground/40" />
+              <p className="text-sm text-muted-foreground">
+                {t("sessions_per_week_empty")}
+              </p>
+            </div>
+          )}
         </section>
       </div>
     </div>

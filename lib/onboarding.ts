@@ -1,22 +1,21 @@
 /**
- * Local-storage keys + helpers for the first-time walkthrough.
+ * Local-storage key + helper for the first-time walkthrough.
  *
- * The walkthrough auto-launches ONLY for a freshly registered user — never on
- * a normal login. Registration sets a per-user "pending" marker; the dashboard
- * consumes it once and clears it. A separate "done" marker (plus the DB
- * `onboarding_completed` flag) guards against re-showing after completion.
+ * The walkthrough auto-launches off the DB flag `profiles.onboarding_completed`
+ * (false → not done yet), so it appears on the user's first login after sign-up
+ * and never again once the flag is flipped to true. This local "done" marker is
+ * only a same-session guard against a re-flash before the DB write lands (or if
+ * it fails) — see components/onboarding/OnboardingProvider.tsx.
  */
 
 export const onboardingDoneKey = (userId: string) =>
   `liminal:onboarding-done:${userId}`;
-export const onboardingPendingKey = (userId: string) =>
-  `liminal:onboarding-pending:${userId}`;
 
-/** Called right after sign-up so the next dashboard mount shows the tour once. */
-export function markOnboardingPending(userId: string) {
-  try {
-    window.localStorage.setItem(onboardingPendingKey(userId), "1");
-  } catch {
-    /* private mode / storage disabled — tour just won't auto-launch */
-  }
-}
+/**
+ * Local-storage key for the AR-training instructions card. Unlike the dashboard
+ * walkthrough there's no DB flag — the card is a lightweight, per-browser
+ * first-run primer shown the first time a patient launches AR training. Scoped
+ * by user id so two accounts on one browser each see it once.
+ */
+export const arInstructionsSeenKey = (userId: string) =>
+  `liminal:ar-instructions-seen:${userId}`;

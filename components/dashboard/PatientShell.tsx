@@ -14,7 +14,7 @@ import { WelcomeCard } from "./WelcomeCard";
 import { PatientCalendar } from "./PatientCalendar";
 import { PatientFeedbackFeed } from "./PatientFeedbackFeed";
 import { OnboardingProvider } from "@/components/onboarding/OnboardingProvider";
-import { getUnreadFeedbackCount } from "@/lib/feedback";
+import { getMyFeedback, type Feedback } from "@/lib/feedback";
 import type { SettingsData } from "@/lib/settings";
 
 interface PatientShellProps {
@@ -25,19 +25,30 @@ interface PatientShellProps {
 export function PatientShell({ userName, settings }: PatientShellProps) {
   const [activeTab, setActiveTab] = useState("overview");
   const [unreadFeedback, setUnreadFeedback] = useState(0);
+  const [feedback, setFeedback] = useState<Feedback[]>([]);
 
-  // Seed the sidebar badge before the feed mounts; the feed keeps it in sync.
+  // Seed the sidebar badge and bell dropdown before the feed mounts; the feed
+  // keeps the unread count in sync afterwards.
   useEffect(() => {
     let active = true;
-    getUnreadFeedbackCount()
-      .then((count) => {
-        if (active) setUnreadFeedback(count);
+    getMyFeedback()
+      .then((items) => {
+        if (!active) return;
+        setFeedback(items);
+        setUnreadFeedback(items.filter((f) => !f.read_at).length);
       })
       .catch(() => {});
     return () => {
       active = false;
     };
   }, []);
+
+  const notifications = feedback.map((f) => ({
+    id: f.id,
+    text: f.body,
+    time: f.created_at,
+    unread: !f.read_at,
+  }));
 
   return (
     <OnboardingProvider
@@ -48,7 +59,12 @@ export function PatientShell({ userName, settings }: PatientShellProps) {
       setActiveTab={setActiveTab}
     >
       <div className="app-scaled flex h-screen flex-col overflow-hidden bg-background">
-        <TopBar userName={userName} avatarUrl={settings.profile.avatarUrl} />
+        <TopBar
+          userName={userName}
+          avatarUrl={settings.profile.avatarUrl}
+          notifications={notifications}
+          hasUnread={unreadFeedback > 0}
+        />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
           type="patient"
@@ -59,8 +75,14 @@ export function PatientShell({ userName, settings }: PatientShellProps) {
         <main className="flex-1 overflow-y-auto px-6 py-8 space-y-10">
           {activeTab === "overview" && (
             <div className="space-y-4">
-              <WelcomeCard userName={userName} variant="patient" />
+              <WelcomeCard
+                userName={userName}
+                userId={settings.userId}
+                variant="patient"
+              />
               <PatientOverview
+                userId={settings.userId}
+                isDemo={settings.profile.isDemo}
                 therapistName={settings.patient?.therapistName}
                 onOpenLimbs={() => setActiveTab("limbs")}
               />
@@ -74,6 +96,7 @@ export function PatientShell({ userName, settings }: PatientShellProps) {
           {activeTab === "program" && <PatientProgram />}
           {activeTab === "limbs" && (
             <LimbGrid
+              userId={settings.userId}
               amputationType={settings.patient?.amputationType}
               amputationSide={settings.patient?.amputationSide}
             />
@@ -83,8 +106,8 @@ export function PatientShell({ userName, settings }: PatientShellProps) {
           )}
           {activeTab === "progress" && (
             <>
-              <ProgressChart />
-              <SessionHistory />
+              <ProgressChart isDemo={settings.profile.isDemo} />
+              <SessionHistory isDemo={settings.profile.isDemo} />
             </>
           )}
           {activeTab === "settings" && <SettingsPanel settings={settings} />}

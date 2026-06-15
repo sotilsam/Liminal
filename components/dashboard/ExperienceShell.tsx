@@ -34,9 +34,13 @@ export function ExperienceShell({ userName, settings }: ExperienceShellProps) {
           <main className="flex-1 overflow-y-auto px-6 py-8 space-y-10">
             {activeTab === "overview" && (
               <>
-                <WelcomeCard userName={userName} variant="experience" />
+                <WelcomeCard
+                  userName={userName}
+                  userId={settings.userId}
+                  variant="experience"
+                />
                 <div data-tour="experience-start">
-                  <LimbGrid />
+                  <LimbGrid userId={settings.userId} />
                 </div>
               </>
             )}

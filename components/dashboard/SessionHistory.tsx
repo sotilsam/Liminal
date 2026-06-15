@@ -3,9 +3,14 @@
 import { useTranslations } from "next-intl";
 import { mockCurrentPatient } from "@/lib/mock-data";
 
-export function SessionHistory() {
+interface SessionHistoryProps {
+  /** Demo/preview account → show the seeded session list. */
+  isDemo?: boolean;
+}
+
+export function SessionHistory({ isDemo = false }: SessionHistoryProps) {
   const t = useTranslations("dashboard");
-  const sessions = mockCurrentPatient.sessions;
+  const sessions = isDemo ? mockCurrentPatient.sessions : [];
 
   return (
     <section>
@@ -13,6 +18,11 @@ export function SessionHistory() {
         {t("session_history")}
       </h2>
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
+        {sessions.length === 0 ? (
+          <div className="px-6 py-12 text-center text-sm text-muted-foreground">
+            {t("no_sessions_yet")}
+          </div>
+        ) : (
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/40">
@@ -50,6 +60,7 @@ export function SessionHistory() {
             ))}
           </tbody>
         </table>
+        )}
       </div>
     </section>
   );

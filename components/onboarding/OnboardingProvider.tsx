@@ -11,7 +11,7 @@ import {
 } from "react";
 import { createClient } from "@/lib/supabase";
 import type { SettingsRole } from "@/lib/settings";
-import { onboardingDoneKey, onboardingPendingKey } from "@/lib/onboarding";
+import { onboardingDoneKey } from "@/lib/onboarding";
 import { tourSteps, type TourStep } from "./tourSteps";
 import { OnboardingOverlay } from "./OnboardingOverlay";
 
@@ -61,19 +61,12 @@ export function OnboardingProvider({
   const [active, setActive] = useState(false);
   const [index, setIndex] = useState(0);
 
-  // The walkthrough auto-launches ONLY for a freshly registered user: the
-  // register flow sets a per-user "pending" marker, which the dashboard
-  // consumes once on first visit. A normal login never sets it, so the tour
-  // never reappears on subsequent logins.
-  const pendingKey = onboardingPendingKey(userId);
+  // The walkthrough auto-launches whenever the DB flag `onboarding_completed`
+  // is false — i.e. on the user's first login after sign-up, regardless of the
+  // device they registered on. Completing or dismissing it flips the flag to
+  // true, so it never reappears. The local "done" marker is only a same-session
+  // guard against a re-flash before the DB write lands (or if it fails).
   const doneKey = onboardingDoneKey(userId);
-  const isPendingLocally = useCallback(() => {
-    try {
-      return window.localStorage.getItem(pendingKey) === "1";
-    } catch {
-      return false;
-    }
-  }, [pendingKey]);
   const isSeenLocally = useCallback(() => {
     try {
       return window.localStorage.getItem(doneKey) === "1";
@@ -81,19 +74,17 @@ export function OnboardingProvider({
       return false;
     }
   }, [doneKey]);
-  // Mark seen (so it never re-auto-launches) and clear the one-shot pending
-  // marker. Swallows storage errors — the DB flag is the fallback.
+  // Mark seen locally so it never re-auto-launches this session. Swallows
+  // storage errors — the DB flag is the durable source of truth.
   const markSeenLocally = useCallback(() => {
     try {
       window.localStorage.setItem(doneKey, "1");
-      window.localStorage.removeItem(pendingKey);
     } catch {
       /* private mode / storage disabled — DB write is the fallback */
     }
-  }, [doneKey, pendingKey]);
+  }, [doneKey]);
 
   // Refs that mirror state / lifecycle without re-triggering effects.
-  const sourceRef = useRef<"auto" | "manual">("manual");
   const persistedRef = useRef(onboardingCompleted);
   const autoHandledRef = useRef(false);
   const activeRef = useRef(false);
@@ -110,11 +101,13 @@ export function OnboardingProvider({
     [steps, setActiveTab]
   );
 
-  // Persist completion — but ONLY for the auto-launched first run. Manual
-  // re-launches must never write the flag (the spec: "does NOT reset it").
-  // Never blocks the UI: failures are logged and swallowed.
+  // Persist completion the first time the tour ends (complete or dismiss) for a
+  // user who hadn't finished it yet — whether it auto-launched or they opened
+  // it from the help control. A user who already completed it (persistedRef
+  // true) re-running it manually never re-writes the flag. Never blocks the
+  // UI: failures are logged and swallowed (the local marker still guards).
   const finalize = useCallback(() => {
-    if (sourceRef.current !== "auto" || persistedRef.current) return;
+    if (persistedRef.current) return;
     persistedRef.current = true;
     // Local marker first — guarantees no re-launch on refresh even if the DB
     // write below fails (missing column / RLS).
@@ -145,7 +138,6 @@ export function OnboardingProvider({
 
   const start = useCallback(() => {
     if (steps.length === 0) return;
-    sourceRef.current = "manual";
     setIndex(0);
     applyTab(0);
     setActive(true);
@@ -171,23 +163,25 @@ export function OnboardingProvider({
     });
   }, [applyTab]);
 
-  // Auto-launch once, shortly after mount — but ONLY for a freshly registered
-  // user (pending marker set during sign-up) who hasn't already finished it.
-  // A normal login has no pending marker, so the tour never shows on login.
+  // Auto-launch once, shortly after mount, for any user who hasn't completed
+  // onboarding yet (DB flag false). This fires on the first login right after
+  // sign-up — even if the profile row was only just created — and stops for
+  // good once the flag is flipped to true on completion/dismissal.
   useEffect(() => {
     if (autoHandledRef.current || steps.length === 0) return;
-    autoHandledRef.current = true;
     if (onboardingCompleted || isSeenLocally()) return;
-    if (!isPendingLocally()) return;
+    // Note: the "handled" guard is flipped *inside* the timeout, not here, so
+    // React StrictMode's mount→unmount→remount in dev (which would clear this
+    // timer) simply reschedules it instead of being permanently suppressed.
     const timer = setTimeout(() => {
-      if (activeRef.current) return; // user already opened it manually
-      sourceRef.current = "auto";
+      if (autoHandledRef.current || activeRef.current) return;
+      autoHandledRef.current = true;
       setIndex(0);
       applyTab(0);
       setActive(true);
     }, 900);
     return () => clearTimeout(timer);
-  }, [onboardingCompleted, steps.length, applyTab, isSeenLocally, isPendingLocally]);
+  }, [onboardingCompleted, steps.length, applyTab, isSeenLocally]);
 
   const value = useMemo<OnboardingContextValue>(
     () => ({

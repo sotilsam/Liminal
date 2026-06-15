@@ -5,7 +5,9 @@ import { useTranslations } from 'next-intl';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import ARSession from '@/components/ar/components/ARSession';
+import { ArTrainingInstructions } from '@/components/ar/ArTrainingInstructions';
 import { setLastModelUrl } from '@/lib/limbSelection';
+import { createClient } from '@/lib/supabase';
 
 type LimbConfig = { limbType: string; side: string; level: string };
 
@@ -48,9 +50,20 @@ function ARTestContent() {
     return m !== null ? m : modelForConfig(config);
   });
 
-  // Remember the model currently loaded so the dashboard can offer to reuse it.
+  // Remember the model currently loaded so the dashboard can offer to reuse it,
+  // scoped to the signed-in patient (not shared across accounts on this browser).
   useEffect(() => {
-    setLastModelUrl(modelUrl);
+    let active = true;
+    createClient()
+      .auth.getUser()
+      .then(({ data }) => {
+        const userId = data.user?.id;
+        if (active && userId) setLastModelUrl(userId, modelUrl);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
   }, [modelUrl]);
 
   return (
@@ -75,6 +88,7 @@ function ARTestContent() {
         </Link>
         <ARSession limbType={config.limbType} side={config.side} level={config.level} modelUrl={modelUrl} />
       </div>
+      <ArTrainingInstructions />
     </div>
   );
 }

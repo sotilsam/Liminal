@@ -39,11 +39,13 @@ const itemVariants = {
 };
 
 interface LimbGridProps {
+  /** Scopes the limb selection to this user's account. */
+  userId: string;
   amputationType?: string | null;
   amputationSide?: string | null;
 }
 
-export function LimbGrid({ amputationType, amputationSide }: LimbGridProps = {}) {
+export function LimbGrid({ userId, amputationType, amputationSide }: LimbGridProps) {
   const t = useTranslations("dashboard");
   const locale = useLocale();
   const router = useRouter();
@@ -53,13 +55,13 @@ export function LimbGrid({ amputationType, amputationSide }: LimbGridProps = {})
 
   // localStorage is only available on the client — read after mount.
   useEffect(() => {
-    const sel = getLimbSelection();
+    const sel = getLimbSelection(userId);
     if (sel) {
       setSelectedId(sel.cardId);
       setSelectedLimb(limbModels.find((l) => l.id === sel.limbId) ?? null);
       setSelectedModelFile(sel.modelFile);
     }
-  }, []);
+  }, [userId]);
 
   function handleSelect(card: CardEntry) {
     setSelectedId(card.cardId);
@@ -67,7 +69,7 @@ export function LimbGrid({ amputationType, amputationSide }: LimbGridProps = {})
     setSelectedModelFile(card.modelFile ?? null);
     // Persist the real limb id (so the overview resolves it) alongside the exact
     // card and its variant model file.
-    setLimbSelection({
+    setLimbSelection(userId, {
       cardId: card.cardId,
       limbId: card.id,
       modelFile: card.modelFile ?? null,

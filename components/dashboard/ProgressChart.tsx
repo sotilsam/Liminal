@@ -10,9 +10,15 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { TrendingUp } from "lucide-react";
 import { progressData } from "@/lib/mock-data";
 
-export function ProgressChart() {
+interface ProgressChartProps {
+  /** Demo/preview account → show the seeded progress curve. */
+  isDemo?: boolean;
+}
+
+export function ProgressChart({ isDemo = false }: ProgressChartProps) {
   const t = useTranslations("dashboard");
 
   return (
@@ -21,6 +27,12 @@ export function ProgressChart() {
         {t("progress_over_time")}
       </h2>
       <div className="rounded-2xl border border-border bg-card p-5">
+        {!isDemo ? (
+          <div className="flex min-h-[200px] flex-col items-center justify-center gap-2 text-center">
+            <TrendingUp className="size-7 text-muted-foreground/40" />
+            <p className="text-sm text-muted-foreground">{t("no_data_yet")}</p>
+          </div>
+        ) : (
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={progressData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.89 0.025 195)" />
@@ -55,6 +67,7 @@ export function ProgressChart() {
             />
           </LineChart>
         </ResponsiveContainer>
+        )}
       </div>
     </section>
   );

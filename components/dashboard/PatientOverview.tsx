@@ -17,6 +17,10 @@ const LimbViewer3D = dynamic(
 );
 
 interface PatientOverviewProps {
+  /** Scopes the patient's limb selection to their account (no cross-account leak). */
+  userId: string;
+  /** Demo/preview account → show seeded progress + next-session values. */
+  isDemo: boolean;
   therapistName?: string | null;
   onOpenLimbs?: () => void;
 }
@@ -31,12 +35,11 @@ const cardVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } },
 };
 
-export function PatientOverview({ therapistName, onOpenLimbs }: PatientOverviewProps) {
+export function PatientOverview({ userId, isDemo, therapistName, onOpenLimbs }: PatientOverviewProps) {
   const t = useTranslations("dashboard");
-  const patient = mockCurrentPatient;
-  const nextSession = "2026-06-02";
 
-  // The limb the patient picked in "Limb Selection" — read on the client.
+  // The limb the patient picked in "Limb Selection" — read on the client,
+  // scoped to this user so a new account never inherits another's selection.
   const [limb, setLimb] = useState<LimbModel | null>(null);
   // The matching 3D model for that limb, launched into the AR camera.
   const [modelUrl, setModelUrl] = useState<string>("");
@@ -44,23 +47,25 @@ export function PatientOverview({ therapistName, onOpenLimbs }: PatientOverviewP
   const [returning, setReturning] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   useEffect(() => {
-    setLimb(getSelectedLimb());
-    setModelUrl(getSelectedModelUrl() ?? "");
-    setReturning(hasLastModel());
-  }, []);
+    setLimb(getSelectedLimb(userId));
+    setModelUrl(getSelectedModelUrl(userId) ?? "");
+    setReturning(hasLastModel(userId));
+  }, [userId]);
 
+  // Demo accounts showcase seeded figures; real accounts get honest empty
+  // states until there's actual session data.
   const cards = [
     {
       icon: CalendarDays,
       label: t("next_session"),
-      value: nextSession,
-      sub: "10:00 AM",
+      value: isDemo ? "2026-06-02" : "—",
+      sub: isDemo ? "10:00 AM" : t("no_session_scheduled"),
     },
     {
       icon: TrendingUp,
       label: t("progress"),
-      value: `${patient.progress}%`,
-      sub: "+5% this week",
+      value: isDemo ? `${mockCurrentPatient.progress}%` : "—",
+      sub: isDemo ? "+5% this week" : t("no_data_yet"),
     },
   ];
 
@@ -225,6 +230,7 @@ export function PatientOverview({ therapistName, onOpenLimbs }: PatientOverviewP
 
       {limb && (
         <ArModelDialog
+          userId={userId}
           limb={limb}
           open={dialogOpen}
           onClose={() => setDialogOpen(false)}

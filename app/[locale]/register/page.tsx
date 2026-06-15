@@ -11,7 +11,7 @@ import { ExperienceForm } from "@/components/registration/ExperienceForm";
 import { Link, useRouter } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase";
 import { generateUniqueTherapistCode } from "@/lib/therapist-code";
-import { markOnboardingPending } from "@/lib/onboarding";
+import { markFirstLogin } from "@/lib/welcome";
 
 const pageVariants = {
   enter: { opacity: 0, x: 24 },
@@ -146,9 +146,13 @@ export default function RegisterPage() {
         }
       }
 
-      // Mark the walkthrough as pending so it auto-launches once on this
-      // user's first dashboard visit — and never on a normal login afterwards.
-      markOnboardingPending(user.id);
+      // The first-time walkthrough auto-launches off the DB flag
+      // `profiles.onboarding_completed` (false for this just-created row), so
+      // it shows on the first dashboard visit and never again after completion.
+
+      // One-shot marker so the first dashboard view greets with "Welcome,
+      // {name}" — every later login shows "Welcome back".
+      markFirstLogin(user.id);
 
       // If email confirmation is required, session won't exist yet
       if (!data.session) {

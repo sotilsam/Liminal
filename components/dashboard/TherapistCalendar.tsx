@@ -79,11 +79,18 @@ export function TherapistCalendar({ linkedPatients }: TherapistCalendarProps) {
             <Loader2 className="size-5 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <TwoWeekCalendar
-            sessions={items}
-            onDelete={handleDelete}
-            deleteLabel={t("delete_plan")}
-          />
+          <>
+            {items.length === 0 && (
+              <p className="mb-3 text-center text-sm text-muted-foreground">
+                {t("no_sessions_scheduled")}
+              </p>
+            )}
+            <TwoWeekCalendar
+              sessions={items}
+              onDelete={handleDelete}
+              deleteLabel={t("delete_plan")}
+            />
+          </>
         )}
       </div>
     </section>

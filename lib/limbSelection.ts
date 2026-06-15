@@ -10,11 +10,16 @@ import { limbModels, type LimbModel } from "./mock-data";
  *  - the limb selection (which card, and the real limb it maps to), and
  *  - the last 3D model the patient actually ran in an AR session,
  * so a returning patient can be offered "reuse your last model, or pick another".
+ *
+ * Both are scoped per user id, so signing in with a different account on the
+ * same browser never inherits another user's selection (a brand-new patient
+ * must start with a clean slate — no "last used" limb).
  */
-const SELECTION_KEY = "liminal:limbSelection";
-const LAST_MODEL_KEY = "liminal:lastModelUrl";
-/** Legacy key — used to store a bare card id. Read once for migration. */
-const LEGACY_KEY = "liminal:selectedLimbId";
+const SELECTION_PREFIX = "liminal:limbSelection";
+const LAST_MODEL_PREFIX = "liminal:lastModelUrl";
+
+const selectionKey = (userId: string) => `${SELECTION_PREFIX}:${userId}`;
+const lastModelKey = (userId: string) => `${LAST_MODEL_PREFIX}:${userId}`;
 
 export interface LimbSelection {
   /**
@@ -28,42 +33,28 @@ export interface LimbSelection {
   modelFile: string | null;
 }
 
-/** Strip a variant suffix ("l3-v2" → "l3") and confirm it's a real limb id. */
-function resolveLimbId(cardId: string): string {
-  if (limbModels.some((l) => l.id === cardId)) return cardId;
-  const base = cardId.split("-")[0];
-  return limbModels.some((l) => l.id === base) ? base : cardId;
-}
-
-export function getLimbSelection(): LimbSelection | null {
-  if (typeof window === "undefined") return null;
+export function getLimbSelection(userId: string): LimbSelection | null {
+  if (typeof window === "undefined" || !userId) return null;
   try {
-    const raw = window.localStorage.getItem(SELECTION_KEY);
-    if (raw) return JSON.parse(raw) as LimbSelection;
-
-    // Migrate the legacy plain-string key (a bare card id).
-    const legacy = window.localStorage.getItem(LEGACY_KEY);
-    if (legacy) {
-      return { cardId: legacy, limbId: resolveLimbId(legacy), modelFile: null };
-    }
-    return null;
+    const raw = window.localStorage.getItem(selectionKey(userId));
+    return raw ? (JSON.parse(raw) as LimbSelection) : null;
   } catch {
     return null;
   }
 }
 
-export function setLimbSelection(sel: LimbSelection): void {
-  if (typeof window === "undefined") return;
+export function setLimbSelection(userId: string, sel: LimbSelection): void {
+  if (typeof window === "undefined" || !userId) return;
   try {
-    window.localStorage.setItem(SELECTION_KEY, JSON.stringify(sel));
+    window.localStorage.setItem(selectionKey(userId), JSON.stringify(sel));
   } catch {
     /* ignore (private mode / storage disabled) */
   }
 }
 
 /** The real limb model the patient selected, or null if none yet. */
-export function getSelectedLimb(): LimbModel | null {
-  const sel = getLimbSelection();
+export function getSelectedLimb(userId: string): LimbModel | null {
+  const sel = getLimbSelection(userId);
   if (!sel) return null;
   return limbModels.find((l) => l.id === sel.limbId) ?? null;
 }
@@ -80,8 +71,8 @@ export function resolveModelFile(limb: LimbModel, modelFile?: string | null): st
 }
 
 /** The model URL for the patient's current selection, ready to launch AR with. */
-export function getSelectedModelUrl(): string | null {
-  const sel = getLimbSelection();
+export function getSelectedModelUrl(userId: string): string | null {
+  const sel = getLimbSelection(userId);
   if (!sel) return null;
   const limb = limbModels.find((l) => l.id === sel.limbId);
   if (!limb) return null;
@@ -94,24 +85,24 @@ export function getSelectedModelUrl(): string | null {
  *  - "" when they last ran the built-in/default model, or
  *  - null when they have never run a session (a first-time patient).
  */
-export function getLastModelUrl(): string | null {
-  if (typeof window === "undefined") return null;
+export function getLastModelUrl(userId: string): string | null {
+  if (typeof window === "undefined" || !userId) return null;
   try {
-    return window.localStorage.getItem(LAST_MODEL_KEY);
+    return window.localStorage.getItem(lastModelKey(userId));
   } catch {
     return null;
   }
 }
 
 /** True once the patient has run at least one AR session (not their first time). */
-export function hasLastModel(): boolean {
-  return getLastModelUrl() !== null;
+export function hasLastModel(userId: string): boolean {
+  return getLastModelUrl(userId) !== null;
 }
 
-export function setLastModelUrl(url: string): void {
-  if (typeof window === "undefined") return;
+export function setLastModelUrl(userId: string, url: string): void {
+  if (typeof window === "undefined" || !userId) return;
   try {
-    window.localStorage.setItem(LAST_MODEL_KEY, url);
+    window.localStorage.setItem(lastModelKey(userId), url);
   } catch {
     /* ignore (private mode / storage disabled) */
   }

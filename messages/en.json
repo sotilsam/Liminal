@@ -172,11 +172,17 @@
     "code_share_hint": "Share this code with patients when they register",
     "no_patients_yet": "No patients linked yet — share your code to get started",
     "welcome": "Welcome back, {name}",
+    "welcome_first": "Welcome, {name}",
     "welcome_sub_therapist": "Here's an overview of your practice today.",
     "welcome_sub_patient": "",
     "welcome_sub_experience": "Explore prosthetic technology and AR interfaces.",
     "recent_activity": "Recent Activity",
     "recent_activity_empty": "No recent sessions yet.",
+    "no_data_yet": "No data yet",
+    "sessions_per_week_empty": "No sessions logged yet.",
+    "no_sessions_scheduled": "No sessions scheduled.",
+    "no_session_scheduled": "No session scheduled",
+    "no_sessions_yet": "No sessions yet — your training history will appear here.",
     "build_remote_plan": "Build Remote Plan",
     "plan_for": "Plan for {name}",
     "search_patients": "Search patients...",
@@ -367,5 +373,28 @@
         "body": "Your virtual limb and real-time AR layer come to life here, in the Design Interface."
       }
     }
+  },
+  "ar_instructions": {
+    "title": "AR Training",
+    "subtitle": "A quick look at how your session works — it only takes a moment.",
+    "steps": {
+      "camera": {
+        "title": "Open your camera",
+        "body": "Tap “Open camera” and allow camera access when your browser asks. Your video stays on your device — nothing is recorded or uploaded."
+      },
+      "frame": {
+        "title": "Step into frame",
+        "body": "Stand a couple of steps back so your whole body is in view. Training calibrates to your body automatically — no setup needed."
+      },
+      "limb": {
+        "title": "Watch your limb appear",
+        "body": "Your selected 3D limb is overlaid on your body in real time and mirrored, just like looking in a mirror."
+      },
+      "adjust": {
+        "title": "Adjust anytime",
+        "body": "Tap “Recalibrate” if the fit drifts, and use the Mirror and Show skeleton toggles to fine-tune the view."
+      }
+    },
+    "dismiss": "Got it — start training"
   }
 }

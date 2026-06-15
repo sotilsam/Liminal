@@ -2,6 +2,17 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type SettingsRole = "therapist" | "patient" | "experience";
 
+/**
+ * Accounts that always render the seeded showcase data, regardless of the
+ * `profiles.is_demo` column. Lets a preview/demo login work even before the
+ * `20260614_demo_flag` migration has been applied (the column may be absent).
+ */
+const DEMO_EMAILS = new Set<string>(["demo.therapist@liminal.health"]);
+
+function isDemoEmail(email: string): boolean {
+  return DEMO_EMAILS.has(email.trim().toLowerCase());
+}
+
 export interface ProfileSettings {
   fullName: string;
   email: string;
@@ -15,6 +26,12 @@ export interface ProfileSettings {
    * (migration not yet applied) or null — i.e. "not completed yet".
    */
   onboardingCompleted: boolean;
+  /**
+   * Demo / preview account. Only these see the seeded showcase data; real
+   * signups get real, RLS-scoped counts and empty states. Falls back to
+   * `false` when the `is_demo` column is missing or null.
+   */
+  isDemo: boolean;
 }
 
 export interface TherapistSettings {
@@ -71,6 +88,7 @@ export async function loadSettings(
     notifyEmail: profile?.notify_email ?? true,
     notifySessionReminders: profile?.notify_session_reminders ?? true,
     onboardingCompleted: profile?.onboarding_completed ?? false,
+    isDemo: profile?.is_demo ?? isDemoEmail(profile?.email ?? user.email ?? ""),
   };
 
   let therapist: TherapistSettings | null = null;

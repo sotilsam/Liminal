@@ -14,11 +14,13 @@ export interface LinkedPatient {
   amputation_side: string | null;
   date_of_birth: string | null;
   // Supabase returns joined rows as an array
-  profiles: { full_name: string; email: string }[] | null;
+  profiles: { full_name: string; email: string; created_at: string | null }[] | null;
 }
 
 interface PatientTableProps {
   linkedPatients?: LinkedPatient[];
+  /** Demo/preview account → showcase the seeded sample patients (with rich files). */
+  isDemo?: boolean;
 }
 
 function toMockShape(p: LinkedPatient): MockPatient {
@@ -26,6 +28,10 @@ function toMockShape(p: LinkedPatient): MockPatient {
   const amputation = [p.amputation_type, p.amputation_side]
     .filter(Boolean)
     .join(" — ");
+  // Join date = when the patient's profile was created at signup (not their birthday).
+  const joinDate = profile?.created_at
+    ? new Date(profile.created_at).toISOString().slice(0, 10)
+    : "—";
   return {
     id: p.id,
     name: profile?.full_name ?? profile?.email ?? "Unknown",
@@ -33,22 +39,24 @@ function toMockShape(p: LinkedPatient): MockPatient {
     lastSession: "—",
     progress: 0,
     amputationType: amputation || "—",
-    joinDate: p.date_of_birth ?? "—",
+    joinDate,
     notes: "",
     sessions: [],
     goals: [],
   };
 }
 
-export function PatientTable({ linkedPatients }: PatientTableProps) {
+export function PatientTable({ linkedPatients, isDemo }: PatientTableProps) {
   const t = useTranslations("dashboard");
   const [selectedPatient, setSelectedPatient] = useState<MockPatient | null>(null);
   const [query, setQuery] = useState("");
 
+  // Demo/preview accounts showcase the rich seeded patients (sessions, notes,
+  // charts). Real accounts map their RLS-scoped linked patients.
   const patients: MockPatient[] =
-    linkedPatients !== undefined
-      ? linkedPatients.map(toMockShape)
-      : mockPatients;
+    isDemo || linkedPatients === undefined
+      ? mockPatients
+      : linkedPatients.map(toMockShape);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

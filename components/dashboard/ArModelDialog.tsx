@@ -8,6 +8,8 @@ import type { LimbModel } from "@/lib/mock-data";
 import { getLastModelUrl } from "@/lib/limbSelection";
 
 interface ArModelDialogProps {
+  /** Scopes the patient's "last model" lookup to their account. */
+  userId: string;
   /** The limb the AR session will launch with. */
   limb: LimbModel;
   open: boolean;
@@ -22,7 +24,7 @@ interface ArModelDialogProps {
  *  - "Use last model": opens AR straight into the remembered model (the camera).
  *  - "Try another":    sends them back to Limb Selection to choose a new one.
  */
-export function ArModelDialog({ limb, open, onClose, onTryAnother }: ArModelDialogProps) {
+export function ArModelDialog({ userId, limb, open, onClose, onTryAnother }: ArModelDialogProps) {
   const t = useTranslations("dashboard");
   const locale = useLocale();
   const router = useRouter();
@@ -36,7 +38,7 @@ export function ArModelDialog({ limb, open, onClose, onTryAnother }: ArModelDial
         limbType: limb.limbType,
         side: limb.side,
         level: limb.level,
-        model: getLastModelUrl() ?? "",
+        model: getLastModelUrl(userId) ?? "",
       },
     });
   }
