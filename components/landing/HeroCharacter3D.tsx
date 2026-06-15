@@ -9,7 +9,7 @@ import { Box3, Vector3 } from "three";
 // back to frame the whole figure). The model is normalized to ~3 units tall
 // below, so these distances are stable regardless of the GLB's authored scale.
 const CAM_START = new Vector3(0, 1.1, 1.3);
-const CAM_END = new Vector3(0, 0.3, 2.9);
+const CAM_END = new Vector3(0, 0.3, 2.54);
 const LOOK_START = new Vector3(0, 1.1, 0); // aim at the face up close
 const LOOK_END = new Vector3(0, 0, 0); // settle on the center
 const INTRO_SECONDS = 2.2;
